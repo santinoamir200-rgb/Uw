@@ -1,0 +1,27 @@
+name: Build APK
+on:
+  push:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 21 }
+      - name: Preparar proyecto
+        run: |
+          mkdir www
+          cp "$(ls *.html | head -n1)" www/index.html
+          npm init -y
+          npm install @capacitor/core@7 @capacitor/android@7 @capacitor/cli@7
+          echo '{"appId":"com.supertournament.app","appName":"Supertournament","webDir":"www"}' > capacitor.config.json
+      - run: npx cap add android
+      - run: npx cap sync android
+      - run: cd android && chmod +x gradlew && ./gradlew assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: supertournament-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
